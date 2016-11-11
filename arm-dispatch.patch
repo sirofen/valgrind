@@ -1,0 +1,62 @@
+--- valgrind-3.11.0/coregrind/m_dispatch/dispatch-arm-linux.S	2015-09-08 09:23:26.000000000 -0400
++++ valgrind-3.11.0.new/coregrind/m_dispatch/dispatch-arm-linux.S	2016-11-10 19:05:29.945422771 -0500
+@@ -100,8 +100,14 @@
+         cmp  r4, #0
+         beq  remove_frame /* we're OK */
+         /* otherwise we have an invariant violation */
++#if defined(ARM_ARCH_V6)
++	/* use slower code on pre-cortex architectures */
++	ldr r1, = #VG_TRC_INVARIANT_FAILED
++	ldr r2, = #0
++#else
+         movw r1, #VG_TRC_INVARIANT_FAILED
+         movw r2, #0
++#endif
+         /* fall through */
+ 
+ remove_frame:
+@@ -153,11 +159,22 @@
+         ldr  r0, [r8, #OFFSET_arm_R15T]
+ 
+         /* stats only */
++#if defined(ARM_ARCH_V6)
++        ldr r1, =vgPlain_stats__n_xindirs_32
++#else
+         movw r1, #:lower16:vgPlain_stats__n_xindirs_32
+         movt r1, #:upper16:vgPlain_stats__n_xindirs_32
++#endif
+         ldr  r2, [r1, #0]
+         add  r2, r2, #1
+         str  r2, [r1, #0]
++
++#if defined(ARM_ARCH_V6)
++	/* use slower code on pre-cortex architectures */
++        ldr r1, =VG_TT_FAST_MASK       // r1 = VG_TT_FAST_MASK
++        ldr r4, =VG_(tt_fast)
++        and  r2, r1, r0, LSR #1        // r2 = entry #
++#else
+         
+         /* try a fast lookup in the translation cache */
+         // r0 = next guest, r1,r2,r3,r4 scratch
+@@ -167,6 +184,8 @@
+ 	and  r2, r1, r0, LSR #1         // r2 = entry #
+         movt r4, #:upper16:VG_(tt_fast) // r4 = &VG_(tt_fast)
+ 
++#endif
++
+ 	add  r1, r4, r2, LSL #3         // r1 = &tt_fast[entry#]
+ 
+         ldrd r4, r5, [r1, #0]           // r4 = .guest, r5 = .host
+@@ -178,8 +197,12 @@
+ 
+         /* otherwise the fast lookup failed */
+         /* RM ME -- stats only */
++#if defined(ARM_ARCH_V6)
++	ldr r1, =vgPlain_stats__n_xindir_misses_32
++#else
+         movw r1, #:lower16:vgPlain_stats__n_xindir_misses_32
+         movt r1, #:upper16:vgPlain_stats__n_xindir_misses_32
++#endif
+         ldr  r2, [r1, #0]
+         add  r2, r2, #1
+         str  r2, [r1, #0]
