@@ -1,0 +1,74 @@
+    to be patched later, so as to guarantee a specific size. */
+ static UInt* imm32_to_ireg_EXACTLY2 ( UInt* p, Int rD, UInt imm32 )
+ {
+-   if (VEX_ARM_ARCHLEVEL(arm_hwcaps) > 6) {
+       /* Generate movw rD, #low16 ;  movt rD, #high16. */
+       UInt lo16 = imm32 & 0xFFFF;
+       UInt hi16 = (imm32 >> 16) & 0xFFFF;
+@@ -2893,9 +2892,6 @@
+                        (hi16 >> 8) & 0xF, (hi16 >> 4) & 0xF,
+                        hi16 & 0xF);
+       *p++ = instr;
+-   } else {
+-      vassert(0); /* lose */
+-   }
+    return p;
+ }
+
+@@ -2903,7 +2899,6 @@
+    imm32_to_ireg_EXACTLY2(). */
+ static Bool is_imm32_to_ireg_EXACTLY2 ( UInt* p, Int rD, UInt imm32 )
+ {
+-   if (VEX_ARM_ARCHLEVEL(arm_hwcaps) > 6) {
+       /* Generate movw rD, #low16 ;  movt rD, #high16. */
+       UInt lo16 = imm32 & 0xFFFF;
+       UInt hi16 = (imm32 >> 16) & 0xFFFF;
+@@ -2914,10 +2909,10 @@
+       i1 = XXXXXXXX(0xE, 0x3, 0x4, (hi16 >> 12) & 0xF, rD,
+                     (hi16 >> 8) & 0xF, (hi16 >> 4) & 0xF,
+                     hi16 & 0xF);
++vex_printf(" 0x%08x/0x%08x", p[0], i0);
++vex_printf(" 0x%08x/0x%08x", p[1], i1);
++
+       return p[0] == i0 && p[1] == i1;
+-   } else {
+-      vassert(0); /* lose */
+-   }
+ }
+
+
+@@ -2962,7 +2957,7 @@
+                     const void* disp_cp_xassisted )
+ {
+    UInt* p = (UInt*)buf;
+-   vassert(nbuf >= 32);
++   vassert(nbuf >= 44);
+    vassert(mode64 == False);
+    vassert(0 == (((HWord)buf) & 3));
+
+@@ -3233,7 +3228,7 @@
+          /* Fix up the conditional jump, if there was one. */
+          if (i->ARMin.XDirect.cond != ARMcc_AL) {
+             Int delta = (UChar*)p - (UChar*)ptmp; /* must be signed */
+-            vassert(delta > 0 && delta < 40);
++            vassert(delta > 0 && delta < 48);
+             vassert((delta & 3) == 0);
+             UInt notCond = 1 ^ (UInt)i->ARMin.XDirect.cond;
+             vassert(notCond <= 13); /* Neither AL nor NV */
+@@ -4669,7 +4664,7 @@
+    /*NOTREACHED*/
+
+   done:
+-   vassert(((UChar*)p) - &buf[0] <= 32);
++   vassert(((UChar*)p) - &buf[0] <= 44);
+    return ((UChar*)p) - &buf[0];
+ }
+
+@@ -4761,7 +4756,7 @@
+       p[2] = 0xE12FFF1C;
+    }
+
+-   VexInvalRange vir = {(HWord)p, 12};
++   VexInvalRange vir = {(HWord)p, 20};
+    return vir;
+ }
