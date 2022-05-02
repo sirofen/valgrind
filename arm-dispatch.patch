@@ -6,8 +6,8 @@
          /* otherwise we have an invariant violation */
 +#if defined(ARM_ARCH_V6)
 +	/* use slower code on pre-cortex architectures */
-+	ldr r1, = #VG_TRC_INVARIANT_FAILED
-+	ldr r2, = #0
++	ldr r1, = VG_TRC_INVARIANT_FAILED
++	ldr r2, = 0
 +#else
          movw r1, #VG_TRC_INVARIANT_FAILED
          movw r2, #0
